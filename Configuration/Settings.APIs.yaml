@@ -1,0 +1,5 @@
+Sitegeist:
+  ForceFeed:
+    apis:
+      openAi:
+        token: ''

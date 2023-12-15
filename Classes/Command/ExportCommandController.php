@@ -7,6 +7,7 @@ namespace Sitegeist\ForceFeed\Command;
 use GuzzleHttp\Psr7\Uri;
 use Neos\ContentRepository\Domain\Model\Node;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
 use Neos\Neos\Domain\Repository\SiteRepository;
 use Neos\Neos\Domain\Service\ContentContext;
@@ -16,6 +17,9 @@ use Sitegeist\ForceFeed\Domain\JsonlRecordCollection;
 
 class ExportCommandController extends CommandController
 {
+    #[Flow\InjectConfiguration(path: 'apis.openAi.token')]
+    protected string $apiToken = '';
+
     public function __construct(
         private readonly ContentContextFactory $contentContextFactory,
         private readonly SiteRepository $siteRepository,

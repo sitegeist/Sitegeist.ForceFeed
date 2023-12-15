@@ -3,7 +3,8 @@
     "type": "neos-package",
     "name": "sitegeist/forcefeed",
     "require": {
-        "neos/neos": "^8.0 || ^9.0"
+        "neos/neos": "^8.0",
+        "openai-php/client": "^0.8"
     },
     "autoload": {
         "psr-4": {
