@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\Uri;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
+use Neos\Flow\Utility\Environment;
 use Neos\Neos\Domain\Repository\SiteRepository;
 use Neos\Neos\Domain\Service\ContentContext;
 use Neos\Neos\Domain\Service\ContentContextFactory;
@@ -21,11 +22,13 @@ class ExportCommandController extends CommandController
     #[Flow\InjectConfiguration(path: 'apis.openAi.token')]
     protected string $apiToken = '';
 
+
     public function __construct(
         private readonly ContentContextFactory $contentContextFactory,
         private readonly SiteRepository $siteRepository,
         private readonly StreamFactoryInterface $streamFactory,
         private readonly ClientInterface $client,
+        private readonly Environment $environment,
     ) {
         parent::__construct();
     }
@@ -48,9 +51,11 @@ class ExportCommandController extends CommandController
             ->withHttpClient($this->client)
             ->make();
 
-        $response = $client->files()->upload([
-            'file' => fopen(FLOW_PATH_ROOT . 'wat.jsonl', 'r'),
-            #'file' => $this->streamFactory->createStream((string)$records)->detach(),
+        $path = $this->environment->getPathToTemporaryDirectory() . '/' . $siteNodeName . '::' . md5($dimensions) . '.jsonl';
+        file_put_contents($path, (string)$records);
+
+        $client->files()->upload([
+            'file' => fopen($path, 'r'),
             'purpose' => 'assistants'
         ]);
     }
