@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Sitegeist\ForceFeed\Command;
 
 use GuzzleHttp\Psr7\Uri;
-use Neos\ContentRepository\Domain\Model\Node;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
 use Neos\Neos\Domain\Repository\SiteRepository;
 use Neos\Neos\Domain\Service\ContentContext;
 use Neos\Neos\Domain\Service\ContentContextFactory;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Sitegeist\ForceFeed\Domain\JsonlRecord;
 use Sitegeist\ForceFeed\Domain\JsonlRecordCollection;
 
@@ -23,11 +24,38 @@ class ExportCommandController extends CommandController
     public function __construct(
         private readonly ContentContextFactory $contentContextFactory,
         private readonly SiteRepository $siteRepository,
+        private readonly StreamFactoryInterface $streamFactory,
+        private readonly ClientInterface $client,
     ) {
         parent::__construct();
     }
 
     public function jsonlCommand(string $siteNodeName, string $dimensions): void
+    {
+        $records = new JsonlRecordCollection(...$this->traverseSubtree($this->getContentContext($siteNodeName, $dimensions)->getCurrentSiteNode()));
+
+        echo (string)$records;
+    }
+
+    public function uploadJsonlCommand(string $siteNodeName, string $dimensions): void
+    {
+        $records = new JsonlRecordCollection(...$this->traverseSubtree($this->getContentContext($siteNodeName, $dimensions)->getCurrentSiteNode()));
+
+        $client = \OpenAI::factory()
+            ->withApiKey($this->apiToken)
+            ->withOrganization(null)
+            ->withHttpHeader('OpenAI-Beta', 'assistants=v1')
+            ->withHttpClient($this->client)
+            ->make();
+
+        $response = $client->files()->upload([
+            'file' => fopen(FLOW_PATH_ROOT . 'wat.jsonl', 'r'),
+            #'file' => $this->streamFactory->createStream((string)$records)->detach(),
+            'purpose' => 'assistants'
+        ]);
+    }
+
+    private function getContentContext(string $siteNodeName, string $dimensions): ContentContext
     {
         $site = $this->siteRepository->findOneByNodeName($siteNodeName);
         if (!$site) {
@@ -45,9 +73,7 @@ class ExportCommandController extends CommandController
             'currentSite' => $site
         ]);
 
-        $records = new JsonlRecordCollection(...$this->traverseSubtree($contentContext->getCurrentSiteNode()));
-
-        echo (string)$records;
+        return $contentContext;
     }
 
     /**
