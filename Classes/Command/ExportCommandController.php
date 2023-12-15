@@ -13,7 +13,6 @@ use Neos\Neos\Domain\Repository\SiteRepository;
 use Neos\Neos\Domain\Service\ContentContext;
 use Neos\Neos\Domain\Service\ContentContextFactory;
 use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\StreamFactoryInterface;
 use Sitegeist\ForceFeed\Domain\JsonlRecord;
 use Sitegeist\ForceFeed\Domain\JsonlRecordCollection;
 
@@ -26,7 +25,6 @@ class ExportCommandController extends CommandController
     public function __construct(
         private readonly ContentContextFactory $contentContextFactory,
         private readonly SiteRepository $siteRepository,
-        private readonly StreamFactoryInterface $streamFactory,
         private readonly ClientInterface $client,
         private readonly Environment $environment,
     ) {
