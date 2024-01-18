@@ -12,24 +12,29 @@ use Neos\Flow\Utility\Environment;
 use Neos\Neos\Domain\Repository\SiteRepository;
 use Neos\Neos\Domain\Service\ContentContext;
 use Neos\Neos\Domain\Service\ContentContextFactory;
-use Psr\Http\Client\ClientInterface;
+use OpenAI\Client;
 use Sitegeist\ForceFeed\Domain\JsonlRecord;
 use Sitegeist\ForceFeed\Domain\JsonlRecordCollection;
 
 class ExportCommandController extends CommandController
 {
-    #[Flow\InjectConfiguration(path: 'apis.openAi.token')]
-    protected string $apiToken = '';
-
-
     public function __construct(
         private readonly ContentContextFactory $contentContextFactory,
         private readonly SiteRepository $siteRepository,
-        private readonly ClientInterface $client,
         private readonly Environment $environment,
+        private readonly Client $client,
     ) {
         parent::__construct();
     }
+
+    public function testClientCommand(): void
+    {
+        $assistants = $this->client->assistants()->list();
+        foreach ($assistants->data as $assistant) {
+            $this->outputLine($assistant->name);
+        }
+    }
+
 
     public function jsonlCommand(string $siteNodeName, string $dimensions): void
     {
@@ -42,12 +47,7 @@ class ExportCommandController extends CommandController
     {
         $records = new JsonlRecordCollection(...$this->traverseSubtree($this->getContentContext($siteNodeName, $dimensions)->getCurrentSiteNode()));
 
-        $client = \OpenAI::factory()
-            ->withApiKey($this->apiToken)
-            ->withOrganization(null)
-            ->withHttpHeader('OpenAI-Beta', 'assistants=v1')
-            ->withHttpClient($this->client)
-            ->make();
+        $client = $this->client();
 
         $path = $this->environment->getPathToTemporaryDirectory() . '/' . $siteNodeName . '::' . md5($dimensions) . '.jsonl';
         file_put_contents($path, (string)$records);

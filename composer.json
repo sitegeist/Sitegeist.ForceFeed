@@ -4,7 +4,7 @@
     "name": "sitegeist/forcefeed",
     "require": {
         "neos/neos": "^8.0",
-        "openai-php/client": "^0.8"
+        "sitegeist/flow-openaiclientfactory": "*"
     },
     "require-dev": {
         "phpstan/phpstan": "~1.10.50",
